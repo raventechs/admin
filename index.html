@@ -266,7 +266,10 @@ var clienteActivo = null;
 // ══════════════════════════════════════════════════
 document.getElementById('btnLogin').onclick = function() {
   var provider = new firebase.auth.GoogleAuthProvider();
-  mainAuth.signInWithPopup(provider).catch(function(e) {
+  mainAuth.signInWithPopup(provider).then(function(result) {
+    // Guardar credential de Google para reusarlo en los otros proyectos
+    window._googleCredential = result.credential;
+  }).catch(function(e) {
     document.getElementById('loginErr').textContent = e.message;
   });
 };
@@ -302,24 +305,42 @@ mainAuth.onAuthStateChanged(function(user) {
 // ══════════════════════════════════════════════════
 function autenticarYCargar() {
   mostrarCargando();
-  var promesas = Object.keys(firebaseApps).map(function(name) {
-    if (name === 'PizzAR') {
-      // Ya autenticado — leer directo
-      return Promise.resolve();
-    }
-    // Para otros proyectos: signIn anónimo no funciona porque
-    // Firestore rules requieren el ADMIN_UID específico.
-    // Usamos signInWithEmailAndPassword no está disponible.
-    // SOLUCIÓN: leemos via Firestore REST con el idToken de PizzAR.
-    // El idToken de Google es universal — el proyecto de destino
-    // lo acepta si las reglas permiten el email del usuario.
-    return Promise.resolve();
-  });
 
-  Promise.all(promesas).then(function() {
-    // Obtener idToken fresco de PizzAR para usarlo en llamadas REST
-    mainAuth.currentUser.getIdToken(true).then(function(token) {
-      window._adminToken = token;
+  // Obtener el credential de Google del login principal (PizzAR)
+  // y reusarlo para autenticar en los otros 6 proyectos Firebase.
+  // Esto genera un idToken válido por proyecto que Firestore acepta.
+  var provider = new firebase.auth.GoogleAuthProvider();
+
+  mainAuth.currentUser.getIdToken(true).then(function(token) {
+    window._adminToken = token;
+
+    // Autenticar en los otros 6 proyectos con signInWithPopup silencioso
+    // usando signInWithCredential + GoogleAuthProvider.credential
+    // Para esto necesitamos el access token de Google, no el idToken de Firebase
+    // Lo obtenemos del result guardado en el primer login
+    var googleCredential = window._googleCredential;
+
+    if (!googleCredential) {
+      // No tenemos el credential — cargar igual con el token de PizzAR
+      // Funcionará solo en proyectos donde el email tiene permisos via reglas
+      cargarTodos(token);
+      return;
+    }
+
+    var promesas = Object.keys(firebaseApps).filter(function(n) { return n !== 'PizzAR'; }).map(function(name) {
+      return firebase.auth(firebaseApps[name]).signInWithCredential(googleCredential)
+        .then(function(result) {
+          return firebase.auth(firebaseApps[name]).currentUser.getIdToken(true);
+        })
+        .then(function(t) {
+          window['_token_' + name] = t;
+        })
+        .catch(function(e) {
+          console.warn(name + ' credential:', e.message);
+        });
+    });
+
+    Promise.all(promesas).then(function() {
       cargarTodos(token);
     });
   });
@@ -332,9 +353,12 @@ function autenticarYCargar() {
 //  lo permiten por email.
 // ══════════════════════════════════════════════════
 function restGet(projectId, coleccion, token) {
+  // Usar token específico del proyecto si existe
+  var appName = Object.keys(PROJECT_IDS).find(function(k) { return PROJECT_IDS[k] === projectId; });
+  var appToken = appName && window['_token_' + appName] ? window['_token_' + appName] : token;
   var url = 'https://firestore.googleapis.com/v1/projects/' + projectId +
     '/databases/(default)/documents/' + coleccion + '?pageSize=200';
-  return fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+  return fetch(url, { headers: { 'Authorization': 'Bearer ' + appToken } })
     .then(function(r) { return r.json(); });
 }
 
