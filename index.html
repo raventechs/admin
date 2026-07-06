@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<!--
+  RavenTechs — Consola Maestra v1.4
+  Reescrita con Firebase compat (igual que las apps del portfolio)
+  Sin módulos ES — máxima compatibilidad
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RavenTechs — Consola Maestra</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase compat — mismo patrón que todas las apps del portfolio -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#202020;
+  --text:#f0f0f0;--muted:#888;--border:#2e2e2e;
+  --accent:#f0b84a;--danger:#e74c3c;--green:#27ae60;
+  --radius:10px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+
+#loadingScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:9999}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#screenLogin{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:20px}
+#screenLogin.visible{display:flex}
+.login-logo{font-size:48px}
+.login-title{font-size:1.4rem;font-weight:700;color:var(--accent)}
+.login-sub{font-size:0.85rem;color:var(--muted);text-align:center}
+.btn-google{background:#fff;color:#333;border:none;border-radius:8px;padding:14px 28px;font-size:0.95rem;font-weight:600;display:flex;align-items:center;gap:10px;margin-top:8px}
+.login-error{color:var(--danger);font-size:0.82rem;margin-top:8px;text-align:center;max-width:300px}
+
+#screenApp{display:none;min-height:100vh;flex-direction:column}
+#screenApp.visible{display:flex}
+
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-weight:700;font-size:1rem;color:var(--accent)}
+.topbar-sub{font-size:0.72rem;color:var(--muted)}
+.btn-sm{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:0.8rem}
+.btn-sm:hover{border-color:var(--danger);color:var(--danger)}
+
+.filters{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{padding:5px 12px;border-radius:999px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;font-weight:600;cursor:pointer}
+.chip.active{background:var(--accent);color:#111;border-color:var(--accent)}
+.search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:0.82rem;width:180px}
+.search:focus{outline:none;border-color:var(--accent)}
+
+main{flex:1;padding:16px;max-width:1100px;width:100%;margin:0 auto}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-n{font-size:1.8rem;font-weight:700;color:var(--accent)}
+.stat-l{font-size:0.7rem;color:var(--muted);margin-top:2px}
+
+.sec-title{font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:0.7rem;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle}
+tr:hover td{background:var(--surface2);cursor:pointer}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:0.7rem;font-weight:700}
+
+.panel{position:fixed;right:0;top:0;width:min(400px,100vw);height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;display:none;flex-direction:column}
+.panel.open{display:flex}
+.panel-head{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-head h3{font-size:0.9rem;font-weight:700}
+.panel-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer}
+.panel-body{flex:1;overflow-y:auto;padding:16px}
+.psec-title{font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;margin-top:16px}
+.psec-title:first-child{margin-top:0}
+.prow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem}
+.prow:last-child{border-bottom:none}
+.prow-l{color:var(--muted)}
+.prow-v{font-weight:600;text-align:right;max-width:200px;word-break:break-all}
+
+.feature-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.82rem}
+.feature-row:last-child{border-bottom:none}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tog-sl{position:absolute;inset:0;background:var(--border);border-radius:22px;cursor:pointer;transition:.2s}
+.tog-sl::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.tog-sl{background:var(--accent)}
+.toggle input:checked+.tog-sl::before{transform:translateX(18px)}
+.btn-guardar{width:100%;background:var(--accent);color:#111;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:0.85rem;margin-top:12px;cursor:pointer}
+
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.loading-msg{text-align:center;padding:40px;color:var(--muted);font-size:0.85rem}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div style="font-size:40px">🦅</div>
+  <div style="color:var(--accent);font-weight:700">RavenTechs</div>
+  <div class="spinner" style="margin-top:8px"></div>
+</div>
+
+<div id="screenLogin">
+  <div class="login-logo">🦅</div>
+  <div class="login-title">Consola Maestra</div>
+  <div class="login-sub">RavenTechs Admin — acceso restringido</div>
+  <button class="btn-google" id="btnLogin">
+    <svg width="18" height="18" viewBox="0 0 18 18">
+      <path fill="#4285f4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.07-1.8 2.71v2.26h2.92c1.71-1.57 2.68-3.88 2.68-6.61z"/>
+      <path fill="#34a853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33C2.44 15.98 5.48 18 9 18z"/>
+      <path fill="#fbbc05" d="M3.97 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A8.96 8.96 0 0 0 0 9c0 1.45.35 2.82.96 4.05l3.01-2.33z"/>
+      <path fill="#ea4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+    </svg>
+    Ingresar con Google
+  </button>
+  <div class="login-error" id="loginError"></div>
+</div>
+
+<div id="screenApp">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span style="font-size:22px">🦅</span>
+      <div>
+        <div class="topbar-title">Consola Maestra</div>
+        <div class="topbar-sub">RavenTechs Admin</div>
+      </div>
+    </div>
+    <button class="btn-sm" id="btnLogout">Salir</button>
+  </div>
+
+  <div class="filters">
+    <span style="font-size:0.72rem;color:var(--muted);font-weight:600;margin-right:2px">App:</span>
+    <button class="chip active" data-app="todas">Todas</button>
+    <button class="chip" data-app="PizzAR">🍕 PizzAR</button>
+    <button class="chip" data-app="PanAR">🥖 PanAR</button>
+    <button class="chip" data-app="CarneAR">🥩 CarneAR</button>
+    <button class="chip" data-app="lavAR">🚗 lavAR</button>
+    <button class="chip" data-app="Rodix">🚑 Rodix</button>
+    <button class="chip" data-app="SecurePro">🔒 SecurePro</button>
+    <button class="chip" data-app="PuntoVenta">🏪 PuntoVenta</button>
+    <input class="search" id="searchInput" placeholder="🔍 Buscar...">
+  </div>
+
+  <main>
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="statTotal">—</div><div class="stat-l">Clientes totales</div></div>
+      <div class="stat"><div class="stat-n" id="statApps">7</div><div class="stat-l">Apps activas</div></div>
+    </div>
+    <div class="sec-title">Clientes</div>
+    <div id="tableContainer"><div class="loading-msg">Cargando clientes de todas las apps...</div></div>
+  </main>
+</div>
+
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <h3 id="panelTitle">Cliente</h3>
+    <button class="panel-close" id="panelClose">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<script>
+// ── SUPERADMIN UIDs por proyecto ──
+var SUPERADMIN_EMAIL = 'rgaraventa@gmail.com';
+var SUPERADMIN_UIDS = {
+  PizzAR:     'OJobrR9kvDenfYhQ6gW0OrUaEy33',
+  PanAR:      'sYwGXqiS1jYvqBrQSXEnIx5djgp2',
+  CarneAR:    'pWh8kxI7B0ZJA60dOiMnBljjK0S2',
+  lavAR:      'JppYs0lmT2h8YrNV63qBdAgRgo22',
+  Rodix:      'pz9r6IT3SkUhjUgxegMFDu6fOOg1',
+  SecurePro:  '6tELKUQHg6X0Btg46j5DGRMQwEK2',
+  PuntoVenta: 'pg6xcoaum7WYk29NnopP8tXLeMV2'
+};
+
+// ── FIREBASE CONFIGS ──
+var APP_CONFIGS = {
+  PizzAR:     { emoji:'🍕', color:'#e74c3c', config:{ apiKey:'AIzaSyBSKWqpPwUsF-jq_GES1fCwiZZACz0Jz_I', authDomain:'pizzar-b48af.firebaseapp.com', projectId:'pizzar-b48af', storageBucket:'pizzar-b48af.firebasestorage.app', messagingSenderId:'688726516053', appId:'1:688726516053:web:2e11e63aec82225e82cfdc' } },
+  PanAR:      { emoji:'🥖', color:'#e67e22', config:{ apiKey:'AIzaSyCM_V4a6QtXtCKzrCGF2eLVTLxT5aOGlCU', authDomain:'panar-b08f1.firebaseapp.com', projectId:'panar-b08f1', storageBucket:'panar-b08f1.firebasestorage.app', messagingSenderId:'984331564649', appId:'1:984331564649:web:a58cea3d04fdecccaa14f8' } },
+  CarneAR:    { emoji:'🥩', color:'#c0392b', config:{ apiKey:'AIzaSyAffBjEK-m900oKRvI4k6w8eTcgbGxyJok', authDomain:'carnear-1d2c4.firebaseapp.com', projectId:'carnear-1d2c4', storageBucket:'carnear-1d2c4.firebasestorage.app', messagingSenderId:'982486541527', appId:'1:982486541527:web:9a7db609c7a983fc3dbc92' } },
+  lavAR:      { emoji:'🚗', color:'#2980b9', config:{ apiKey:'AIzaSyDVcK9reiQuC6YUpX16DMjyYhtYiH40hbc', authDomain:'lavar-b8b84.firebaseapp.com', projectId:'lavar-b8b84', storageBucket:'lavar-b8b84.firebasestorage.app', messagingSenderId:'1064006581602', appId:'1:1064006581602:web:fb5f0eea1dcff93d7a003b' } },
+  Rodix:      { emoji:'🚑', color:'#8e44ad', config:{ apiKey:'AIzaSyDH4GvbdtPqJwUlnRDqtOUoofkL4PTXiew', authDomain:'vehigest-ar.firebaseapp.com', projectId:'vehigest-ar', storageBucket:'vehigest-ar.firebasestorage.app', messagingSenderId:'150404378851', appId:'1:150404378851:web:940ba835e20c4edeb215d6' } },
+  SecurePro:  { emoji:'🔒', color:'#16a085', config:{ apiKey:'AIzaSyDgpyUd8AExCLy29fwkjc5-mEALA57Wtig', authDomain:'pro-a247e.firebaseapp.com', projectId:'pro-a247e', storageBucket:'pro-a247e.firebasestorage.app', messagingSenderId:'3470750973', appId:'1:3470750973:web:f3d029ed18093ecaf1ba94' } },
+  PuntoVenta: { emoji:'🏪', color:'#f0b84a', config:{ apiKey:'AIzaSyAP9PEuKM9ck-a9ltWorlFunxPYXw7trtE', authDomain:'puntoventa-f316c.firebaseapp.com', projectId:'puntoventa-f316c', storageBucket:'puntoventa-f316c.firebasestorage.app', messagingSenderId:'229168693051', appId:'1:229168693051:web:9dcb7d95f39edc4c17011e' } }
+};
+
+// ── FEATURES POR APP ──
+var APP_FEATURES = {
+  PizzAR:     ['stockHabilitado','gastosHabilitado','recetasHabilitado'],
+  PanAR:      ['stockHabilitado','gastosHabilitado','recetasHabilitado'],
+  CarneAR:    ['stockHabilitado','gastosHabilitado','proveedoresHabilitado'],
+  lavAR:      ['fidelizacion','multiSucursal','gastos'],
+  Rodix:      ['multiFlota','alertasAvanzadas'],
+  SecurePro:  ['multiUsuario','presupuestosIlimitados'],
+  PuntoVenta: ['limiteNegocios','cuentaCorriente','empleados']
+};
+
+// ── INICIALIZAR APPS FIREBASE ──
+var firebaseInstances = {};
+var googleCredential = null;
+var todosClientes = [];
+var filtroApp = 'todas';
+
+function getFirebaseApp(appName) {
+  if (!firebaseInstances[appName]) {
+    var app = firebase.initializeApp(APP_CONFIGS[appName].config, appName);
+    firebaseInstances[appName] = {
+      app: app,
+      auth: firebase.auth(app),
+      db: firebase.firestore(app)
+    };
+  }
+  return firebaseInstances[appName];
+}
+
+// ── APP PRINCIPAL PARA AUTH ──
+var mainApp = firebase.initializeApp(APP_CONFIGS.PizzAR.config, 'main');
+var mainAuth = firebase.auth(mainApp);
+
+// ── HELPERS UI ──
+function showLoading(v) { document.getElementById('loadingScreen').style.display = v ? 'flex' : 'none'; }
+function showLogin(v) {
+  var el = document.getElementById('screenLogin');
+  el.classList.toggle('visible', v);
+}
+function showApp(v) {
+  var el = document.getElementById('screenApp');
+  el.classList.toggle('visible', v);
+}
+
+// ── AUTH ──
+document.getElementById('btnLogin').onclick = function() {
+  var provider = new firebase.auth.GoogleAuthProvider();
+  mainAuth.signInWithPopup(provider).then(function(result) {
+    googleCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+  }).catch(function(e) {
+    document.getElementById('loginError').textContent = e.message;
+  });
+};
+
+document.getElementById('btnLogout').onclick = function() {
+  mainAuth.signOut();
+};
+
+mainAuth.onAuthStateChanged(function(user) {
+  showLoading(false);
+  if (user) {
+    if (user.uid !== SUPERADMIN_UIDS.PizzAR) {
+      document.getElementById('loginError').textContent = 'Acceso denegado.';
+      mainAuth.signOut();
+      showLogin(true);
+      return;
+    }
+    showLogin(false);
+    showApp(true);
+    autenticarYCargar();
+  } else {
+    showApp(false);
+    showLogin(true);
+    todosClientes = [];
+  }
+});
+
+// ── AUTH EN TODOS LOS PROYECTOS + CARGA DE CLIENTES ──
+function autenticarYCargar() {
+  if (!googleCredential) {
+    // Si no hay credential (recarga de página con sesión activa), cargamos igual
+    cargarTodosLosClientes();
+    return;
+  }
+  var promesas = Object.keys(APP_CONFIGS).map(function(appName) {
+    return getFirebaseApp(appName).auth.signInWithCredential(googleCredential).catch(function(e) {
+      console.warn('Auth ' + appName + ':', e.message);
+    });
+  });
+  Promise.allSettled(promesas).then(function() {
+    cargarTodosLosClientes();
+  });
+}
+
+function cargarTodosLosClientes() {
+  todosClientes = [];
+  document.getElementById('tableContainer').innerHTML = '<div class="loading-msg">Cargando...</div>';
+  var promesas = Object.keys(APP_CONFIGS).map(function(appName) {
+    return cargarApp(appName);
+  });
+  Promise.allSettled(promesas).then(function() {
+    renderTabla();
+  });
+}
+
+function cargarApp(appName) {
+  var inst = getFirebaseApp(appName);
+  var db = inst.db;
+  var uid = SUPERADMIN_UIDS[appName];
+
+  var colecciones = {
+    PizzAR:     [{ col:'configuracion', tipo:'config' }],
+    PanAR:      [{ col:'configuracion', tipo:'config' }],
+    CarneAR:    [{ col:'negocios', tipo:'col', emailField:'email' }],
+    lavAR:      [{ col:'usuarios', tipo:'col', emailField:'email' }],
+    Rodix:      [{ col:'usuarios', tipo:'col', emailField:'email' }],
+    SecurePro:  [{ col:'usuarios', tipo:'col', emailField:'email' }],
+    PuntoVenta: [{ col:'usuarios', tipo:'col', emailField:'email' }]
+  };
+
+  var info = colecciones[appName][0];
+
+  return db.collection(info.col).get().then(function(snap) {
+    snap.forEach(function(d) {
+      var data = d.data();
+      var email = data.email || data.ownerEmail || '';
+      // Excluir el superadmin
+      if (!email || email === SUPERADMIN_EMAIL) return;
+      todosClientes.push({
+        uid: d.id,
+        email: email,
+        nombre: data.nombre || data.nombreLocal || data.displayName || '—',
+        app: appName,
+        features: data.features || {},
+        status: data.status || 'activo',
+        raw: data
+      });
+    });
+  }).catch(function(e) {
+    console.warn('Error cargando ' + appName + ':', e.message);
+  });
+}
+
+// ── TABLA ──
+function clientesFiltrados() {
+  var busqueda = (document.getElementById('searchInput').value || '').toLowerCase();
+  return todosClientes.filter(function(c) {
+    var matchApp = filtroApp === 'todas' || c.app === filtroApp;
+    var matchBusq = !busqueda || c.email.toLowerCase().includes(busqueda) || c.nombre.toLowerCase().includes(busqueda);
+    return matchApp && matchBusq;
+  });
+}
+
+function renderTabla() {
+  var lista = clientesFiltrados();
+  document.getElementById('statTotal').textContent = todosClientes.length;
+
+  if (!lista.length) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty">Sin clientes en este filtro</div>';
+    return;
+  }
+
+  var rows = lista.map(function(c) {
+    var color = APP_CONFIGS[c.app].color;
+    var emoji = APP_CONFIGS[c.app].emoji;
+    var feats = Object.entries(c.features || {}).filter(function(e) { return e[1] === true; }).map(function(e) { return e[0]; });
+    return '<tr onclick="abrirPanel(\'' + c.uid + '\',\'' + c.app + '\')" style="cursor:pointer">' +
+      '<td><span class="badge" style="background:' + color + '22;color:' + color + '">' + emoji + ' ' + c.app + '</span></td>' +
+      '<td>' + c.email + '</td>' +
+      '<td>' + c.nombre + '</td>' +
+      '<td style="color:var(--muted);font-size:0.75rem">' + (feats.join(', ') || '—') + '</td>' +
+      '<td><button class="chip" style="font-size:0.7rem;padding:3px 10px" onclick="event.stopPropagation();abrirPanel(\'' + c.uid + '\',\'' + c.app + '\')">Ver →</button></td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('tableContainer').innerHTML =
+    '<div class="table-wrap"><table>' +
+    '<thead><tr><th>App</th><th>Email</th><th>Nombre</th><th>Features Plus</th><th></th></tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '</table></div>';
+}
+
+function abrirPanel(uid, appName) {
+  var c = todosClientes.find(function(x) { return x.uid === uid && x.app === appName; });
+  if (!c) return;
+  document.getElementById('panelTitle').textContent = APP_CONFIGS[appName].emoji + ' ' + c.email;
+  var feats = APP_FEATURES[appName] || [];
+  var body =
+    '<div class="psec-title">Datos del cliente</div>' +
+    '<div class="prow"><span class="prow-l">Email</span><span class="prow-v">' + c.email + '</span></div>' +
+    '<div class="prow"><span class="prow-l">Nombre</span><span class="prow-v">' + c.nombre + '</span></div>' +
+    '<div class="prow"><span class="prow-l">App</span><span class="prow-v">' + appName + '</span></div>' +
+    '<div class="prow"><span class="prow-l">Estado</span><span class="prow-v">' + (c.status || 'activo') + '</span></div>' +
+    '<div class="prow"><span class="prow-l">UID</span><span class="prow-v" style="font-size:0.68rem;color:var(--muted)">' + uid + '</span></div>' +
+    '<div class="psec-title">Features Plus</div>' +
+    feats.map(function(k) {
+      var checked = c.features && c.features[k] ? 'checked' : '';
+      return '<div class="feature-row"><span>' + k + '</span>' +
+        '<label class="toggle"><input type="checkbox" class="feat-toggle" data-key="' + k + '" ' + checked + '><span class="tog-sl"></span></label></div>';
+    }).join('') +
+    '<button class="btn-guardar" onclick="guardarFeatures(\'' + uid + '\',\'' + appName + '\')">Guardar features</button>';
+  document.getElementById('panelBody').innerHTML = body;
+  document.getElementById('panel').classList.add('open');
+}
+
+function guardarFeatures(uid, appName) {
+  var btn = document.querySelector('.btn-guardar');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+  var toggles = document.querySelectorAll('.feat-toggle');
+  var nuevas = {};
+  toggles.forEach(function(t) { nuevas[t.dataset.key] = t.checked; });
+  var db = getFirebaseApp(appName).db;
+  db.collection('configuracion').doc('general').set({ features: nuevas }, { merge: true })
+    .then(function() {
+      var c = todosClientes.find(function(x) { return x.uid === uid && x.app === appName; });
+      if (c) c.features = nuevas;
+      btn.textContent = '✅ Guardado';
+      setTimeout(function() { btn.textContent = 'Guardar features'; btn.disabled = false; }, 2000);
+    }).catch(function(e) { btn.textContent = 'Error'; btn.disabled = false; });
+}
+
+// ── FILTROS ──
+document.querySelectorAll('.chip[data-app]').forEach(function(chip) {
+  chip.onclick = function() {
+    document.querySelectorAll('.chip[data-app]').forEach(function(c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+    filtroApp = chip.dataset.app;
+    renderTabla();
+  };
+});
+
+document.getElementById('searchInput').oninput = function() { renderTabla(); };
+document.getElementById('panelClose').onclick = function() {
+  document.getElementById('panel').classList.remove('open');
+};
+</script>
+</body>
+</html>
