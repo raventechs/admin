@@ -629,7 +629,7 @@ function abrirImpersonar() {
   var c = clienteActivo;
   if (!c) return;
   var m = APP_META[c.app];
-  var url = m.url + '?adminView=1&uid=' + encodeURIComponent(c.uid) + '&app=' + c.app;
+  var url = m.url + '?adminView=1&uid=' + encodeURIComponent(c.uid) + '&app=' + c.app + '&tok=' + encodeURIComponent(window._adminToken || '');
 
   document.getElementById('impInfo').innerHTML =
     '<b>' + m.emoji + ' ' + c.nombre + '</b><br>' +
