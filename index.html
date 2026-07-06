@@ -258,6 +258,14 @@ mainAuth.onAuthStateChanged(function(user) {
     }
     showLogin(false);
     showApp(true);
+    if (!googleCredential) {
+      // Sesion preexistente — mostrar aviso para re-autenticar
+      document.getElementById('tableContainer').innerHTML =
+        '<div class="loading-msg" style="color:#f0b84a;">&#9888; Para ver todos los clientes, cerrá sesión y volvé a entrar con Google.<br><br>' +
+        '<button onclick="mainAuth.signOut()" style="background:#f0b84a;color:#111;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;margin-top:8px;">Cerrar sesión ahora</button></div>';
+      showApp(true);
+      return;
+    }
     autenticarYCargar();
   } else {
     showApp(false);
@@ -269,18 +277,34 @@ mainAuth.onAuthStateChanged(function(user) {
 // ── AUTH EN TODOS LOS PROYECTOS + CARGA DE CLIENTES ──
 function autenticarYCargar() {
   if (!googleCredential) {
-    // Si no hay credential (recarga de página con sesión activa), cargamos igual
+    // Sin credential (sesion preexistente) — intentar cargar directo
+    // Las reglas de Firestore permiten acceso al superadmin por UID
+    // asi que la app principal (PizzAR) ya esta autenticada
+    // Para los otros proyectos, intentamos cargar y si falla es porque
+    // el superadmin no esta autenticado en ese proyecto todavia
+    // En ese caso, pedimos que el usuario cierre sesion y vuelva a entrar
+    console.warn('Sin credential de Google — cargando solo con sesion de PizzAR');
     cargarTodosLosClientes();
     return;
   }
-  var promesas = Object.keys(APP_CONFIGS).map(function(appName) {
-    return getFirebaseApp(appName).auth.signInWithCredential(googleCredential).catch(function(e) {
-      console.warn('Auth ' + appName + ':', e.message);
-    });
-  });
-  Promise.allSettled(promesas).then(function() {
-    cargarTodosLosClientes();
-  });
+  // Con credential — autenticar en todos los proyectos
+  var appNames = Object.keys(APP_CONFIGS);
+  var i = 0;
+  function autenticarSiguiente() {
+    if (i >= appNames.length) {
+      cargarTodosLosClientes();
+      return;
+    }
+    var appName = appNames[i++];
+    if (appName === 'PizzAR') { autenticarSiguiente(); return; } // ya autenticado
+    getFirebaseApp(appName).auth.signInWithCredential(googleCredential)
+      .then(autenticarSiguiente)
+      .catch(function(e) {
+        console.warn('Auth ' + appName + ':', e.message);
+        autenticarSiguiente();
+      });
+  }
+  autenticarSiguiente();
 }
 
 function cargarTodosLosClientes() {
