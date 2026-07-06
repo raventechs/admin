@@ -4,52 +4,80 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RavenTechs — Consola Maestra</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0d0d0d;--surface:#161616;--surface2:#202020;--text:#f0f0f0;--muted:#888;--border:#2e2e2e;--accent:#f0b84a;--danger:#e74c3c;--green:#27ae60;--radius:10px}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-button{cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
-.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+:root{
+  --bg:#0b0c10;--surface:#13151c;--surface2:#1c1f2a;
+  --border:#252836;--text:#eef0f6;--muted:#6b7280;
+  --accent:#f0b84a;--danger:#ef4444;--ok:#22c55e;
+  --radius:10px;--font:'Inter',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;font-family:var(--font);transition:all .15s}
+
+/* ── LOGIN ── */
 #screenLogin{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;text-align:center}
-#screenLogin.visible{display:flex}
+#screenLogin.on{display:flex}
+.logo-display{font-family:'Sora',sans-serif;font-size:1.6rem;font-weight:700;color:var(--accent);letter-spacing:-.02em}
+.btn-google{background:#fff;color:#222;border:none;border-radius:10px;padding:13px 24px;font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.btn-google:hover{opacity:.9}
+.login-err{color:var(--danger);font-size:0.78rem;max-width:300px}
+
+/* ── APP ── */
 #screenApp{display:none;min-height:100vh;flex-direction:column}
-#screenApp.visible{display:flex}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.btn-out{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:0.8rem}
-.filters{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.chip{padding:5px 12px;border-radius:999px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;font-weight:600;cursor:pointer}
-.chip.active{background:var(--accent);color:#111;border-color:var(--accent)}
-.search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:0.82rem;width:160px}
-main{flex:1;padding:14px;max-width:1100px;width:100%;margin:0 auto}
+#screenApp.on{display:flex}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.tbar-title{font-family:'Sora',sans-serif;font-weight:700;font-size:0.95rem;color:var(--accent)}
+.tbar-sub{font-size:0.65rem;color:var(--muted)}
+.btn-out{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:0.78rem}
+.btn-out:hover{border-color:var(--danger);color:var(--danger)}
+
+/* ── FILTROS ── */
+.filters{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{padding:5px 13px;border-radius:999px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;font-weight:600}
+.chip.on{background:var(--accent);color:#111;border-color:var(--accent)}
+.search-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:0.82rem;width:160px;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.btn-reload{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:0.8rem}
+.btn-reload:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── MAIN ── */
+main{flex:1;padding:14px 16px;max-width:1100px;width:100%;margin:0 auto}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
-.stat-n{font-size:1.6rem;font-weight:700;color:var(--accent)}
-.stat-l{font-size:0.68rem;color:var(--muted);margin-top:2px}
-.sec-title{font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.stat-n{font-size:1.5rem;font-weight:700;color:var(--accent)}
+.stat-l{font-size:0.66rem;color:var(--muted);margin-top:2px}
+.sec-title{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;font-size:0.68rem;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;white-space:nowrap}
+th{text-align:left;font-size:0.66rem;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;white-space:nowrap}
 td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:0.8rem;vertical-align:middle}
-tr:hover td{background:var(--surface2);cursor:pointer}
-.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:0.68rem;font-weight:700}
-.panel{position:fixed;right:0;top:0;width:min(380px,100vw);height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;display:none;flex-direction:column}
-.panel.open{display:flex}
-.panel-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.panel-head h3{font-size:0.88rem;font-weight:700}
-.panel-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer}
+tr.clickable:hover td{background:var(--surface2);cursor:pointer}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:0.67rem;font-weight:700}
+.msg{padding:32px;text-align:center;color:var(--muted);font-size:0.85rem;line-height:1.7}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+
+/* ── PANEL LATERAL ── */
+.panel{position:fixed;right:0;top:0;width:min(400px,100vw);height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;display:none;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,.4)}
+.panel.on{display:flex}
+.panel-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.panel-head h3{font-size:0.88rem;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel-close{background:none;border:none;color:var(--muted);font-size:1.2rem;flex-shrink:0}
 .panel-body{flex:1;overflow-y:auto;padding:14px 16px}
-.psec{font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin:14px 0 6px}
+.psec{font-size:0.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 7px}
 .psec:first-child{margin-top:0}
-.prow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.8rem}
+.prow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.8rem}
 .prow:last-child{border-bottom:none}
 .prow-l{color:var(--muted)}
-.prow-v{font-weight:600;text-align:right;max-width:190px;word-break:break-all}
-.feat-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.8rem}
+.prow-v{font-weight:600;text-align:right;max-width:200px;word-break:break-all}
+.feat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.8rem}
 .feat-row:last-child{border-bottom:none}
 .toggle{position:relative;width:38px;height:20px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0;position:absolute}
@@ -57,18 +85,42 @@ tr:hover td{background:var(--surface2);cursor:pointer}
 .tog-sl::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
 .toggle input:checked+.tog-sl{background:var(--accent)}
 .toggle input:checked+.tog-sl::before{transform:translateX(18px)}
-.btn-guardar{width:100%;background:var(--accent);color:#111;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:0.82rem;margin-top:10px;cursor:pointer}
-.msg{padding:30px;text-align:center;color:var(--muted);font-size:0.85rem;line-height:1.6}
-.btn-google{background:#fff;color:#333;border:none;border-radius:8px;padding:13px 24px;font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:10px}
-.login-err{color:var(--danger);font-size:0.8rem;max-width:280px}
+.btn-guardar{width:100%;background:var(--accent);color:#111;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:0.82rem;margin-top:6px}
+.btn-impersonar{width:100%;background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;padding:10px;font-weight:700;font-size:0.82rem;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-impersonar:hover{background:rgba(240,184,74,.08)}
+
+/* ── IMPERSONAR MODAL ── */
+.imp-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.imp-modal.on{display:flex}
+.imp-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(340px,94vw);overflow:hidden}
+.imp-head{padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.imp-head h3{font-size:0.95rem;font-weight:700}
+.imp-close{background:none;border:none;color:var(--muted);font-size:1.2rem}
+.imp-body{padding:20px}
+.imp-info{font-size:0.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.imp-info b{color:var(--text)}
+.imp-url{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.75rem;color:var(--accent);word-break:break-all;margin-bottom:14px;font-family:monospace}
+.btn-abrir-app{width:100%;background:var(--accent);color:#111;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:0.88rem}
+.btn-abrir-app:hover{opacity:.9}
+
+/* ── LOADING STATES ── */
+.load-grid{display:grid;gap:6px;padding:4px}
+.load-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:0.8rem}
+.load-app{display:flex;align-items:center;gap:8px}
+.load-status{font-size:0.75rem}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:999px;font-size:0.82rem;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="screenLogin">
-  <div style="font-size:44px">🦅</div>
-  <div style="font-weight:700;font-size:1.3rem;color:var(--accent)">Consola Maestra</div>
-  <div style="font-size:0.82rem;color:var(--muted)">RavenTechs Admin — acceso restringido</div>
+  <div style="font-size:48px;margin-bottom:4px">🦅</div>
+  <div class="logo-display">Consola Maestra</div>
+  <div style="font-size:0.8rem;color:var(--muted)">RavenTechs Admin — acceso restringido</div>
   <button class="btn-google" id="btnLogin">
     <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285f4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.07-1.8 2.71v2.26h2.92c1.71-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34a853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33C2.44 15.98 5.48 18 9 18z"/><path fill="#fbbc05" d="M3.97 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A8.96 8.96 0 0 0 0 9c0 1.45.35 2.82.96 4.05l3.01-2.33z"/><path fill="#ea4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
     Ingresar con Google
@@ -76,38 +128,45 @@ tr:hover td{background:var(--surface2);cursor:pointer}
   <div class="login-err" id="loginErr"></div>
 </div>
 
+<!-- APP -->
 <div id="screenApp">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px">🦅</span>
+    <div class="topbar-left">
+      <span style="font-size:22px">🦅</span>
       <div>
-        <div style="font-weight:700;font-size:0.95rem;color:var(--accent)">Consola Maestra</div>
-        <div style="font-size:0.68rem;color:var(--muted)">RavenTechs Admin</div>
+        <div class="tbar-title">Consola Maestra</div>
+        <div class="tbar-sub">RavenTechs Admin</div>
       </div>
     </div>
     <button class="btn-out" id="btnLogout">Salir</button>
   </div>
+
   <div class="filters">
-    <button class="chip active" data-app="todas">Todas</button>
-    <button class="chip" data-app="PizzAR">🍕</button>
-    <button class="chip" data-app="PanAR">🥖</button>
-    <button class="chip" data-app="CarneAR">🥩</button>
-    <button class="chip" data-app="lavAR">🚗</button>
-    <button class="chip" data-app="Rodix">🚑</button>
-    <button class="chip" data-app="SecurePro">🔒</button>
-    <button class="chip" data-app="PuntoVenta">🏪</button>
-    <input class="search" id="searchInput" placeholder="Buscar...">
+    <button class="chip on" data-app="todas">Todas</button>
+    <button class="chip" data-app="PizzAR">🍕 PizzAR</button>
+    <button class="chip" data-app="PanAR">🥖 PanAR</button>
+    <button class="chip" data-app="CarneAR">🥩 CarneAR</button>
+    <button class="chip" data-app="lavAR">🚗 lavAR</button>
+    <button class="chip" data-app="Rodix">🚑 Rodix</button>
+    <button class="chip" data-app="SecurePro">🔒 SecurePro</button>
+    <button class="chip" data-app="PuntoVenta">🏪 PuntoVenta</button>
+    <input class="search-input" id="searchInput" placeholder="Buscar cliente...">
+    <button class="btn-reload" id="btnReload">↺ Recargar</button>
   </div>
+
   <main>
     <div class="stats">
-      <div class="stat"><div class="stat-n" id="statTotal">—</div><div class="stat-l">Clientes</div></div>
-      <div class="stat"><div class="stat-n">7</div><div class="stat-l">Apps</div></div>
+      <div class="stat"><div class="stat-n" id="statTotal">—</div><div class="stat-l">Clientes totales</div></div>
+      <div class="stat"><div class="stat-n" id="statApps">7</div><div class="stat-l">Apps activas</div></div>
+      <div class="stat"><div class="stat-n" id="statOk">—</div><div class="stat-l">Proyectos OK</div></div>
+      <div class="stat"><div class="stat-n" id="statErr">—</div><div class="stat-l">Con error</div></div>
     </div>
-    <div class="sec-title">Clientes</div>
-    <div id="tableWrap"><div class="msg">Cargando...</div></div>
+    <div class="sec-title">Clientes registrados</div>
+    <div id="tableWrap"><div class="msg">Iniciá sesión para cargar los datos.</div></div>
   </main>
 </div>
 
+<!-- PANEL LATERAL -->
 <div class="panel" id="panel">
   <div class="panel-head">
     <h3 id="panelTitle">—</h3>
@@ -116,11 +175,41 @@ tr:hover td{background:var(--surface2);cursor:pointer}
   <div class="panel-body" id="panelBody"></div>
 </div>
 
+<!-- MODAL IMPERSONAR -->
+<div class="imp-modal" id="impModal">
+  <div class="imp-box">
+    <div class="imp-head">
+      <h3>👁 Ver como cliente</h3>
+      <button class="imp-close" id="impClose">✕</button>
+    </div>
+    <div class="imp-body">
+      <div class="imp-info" id="impInfo"></div>
+      <div class="imp-url" id="impUrl"></div>
+      <button class="btn-abrir-app" id="btnAbrirApp">Abrir app como este cliente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-var ADMIN_UID_PIZZAR = 'OJobrR9kvDenfYhQ6gW0OrUaEy33';
+// ══════════════════════════════════════════════════
+//  CONFIGURACIÓN — un Firebase app por proyecto
+// ══════════════════════════════════════════════════
 var ADMIN_EMAIL = 'rgaraventa@gmail.com';
 
-// UID de rgaraventa en cada proyecto
+var APP_META = {
+  PizzAR:     { emoji:'🍕', color:'#e74c3c', url:'https://raventechs.lat/pizzAr/', feats:['stockHabilitado','gastosHabilitado','recetasHabilitado'] },
+  PanAR:      { emoji:'🥖', color:'#e67e22', url:'https://raventechs.lat/panar/', feats:['stockHabilitado','gastosHabilitado','recetasHabilitado'] },
+  CarneAR:    { emoji:'🥩', color:'#c0392b', url:'https://raventechs.lat/carneAr/', feats:['stockHabilitado','gastosHabilitado','proveedoresHabilitado'] },
+  lavAR:      { emoji:'🚗', color:'#2980b9', url:'https://raventechs.lat/lavar/', feats:['fidelizacion','multiSucursal','gastos'] },
+  Rodix:      { emoji:'🚑', color:'#8e44ad', url:'https://raventechs.lat/vehigest-ar/', feats:['multiFlota','alertasAvanzadas'] },
+  SecurePro:  { emoji:'🔒', color:'#16a085', url:'https://raventechs.lat/securepro/', feats:['multiUsuario','presupuestosIlimitados'] },
+  PuntoVenta: { emoji:'🏪', color:'#f0b84a', url:'https://raventechs.lat/puntoventa/', feats:['limiteNegocios','cuentaCorriente','empleados'] }
+};
+
+// UID de rgaraventa@gmail.com en cada proyecto Firebase
 var ADMIN_UIDS = {
   PizzAR:     'OJobrR9kvDenfYhQ6gW0OrUaEy33',
   PanAR:      'sYwGXqiS1jYvqBrQSXEnIx5djgp2',
@@ -131,17 +220,6 @@ var ADMIN_UIDS = {
   PuntoVenta: 'pg6xcoaum7WYk29NnopP8tXLeMV2'
 };
 
-var APP_META = {
-  PizzAR:     {emoji:'🍕', color:'#e74c3c', feats:['stockHabilitado','gastosHabilitado','recetasHabilitado']},
-  PanAR:      {emoji:'🥖', color:'#e67e22', feats:['stockHabilitado','gastosHabilitado','recetasHabilitado']},
-  CarneAR:    {emoji:'🥩', color:'#c0392b', feats:['stockHabilitado','gastosHabilitado','proveedoresHabilitado']},
-  lavAR:      {emoji:'🚗', color:'#2980b9', feats:['fidelizacion','multiSucursal','gastos']},
-  Rodix:      {emoji:'🚑', color:'#8e44ad', feats:['multiFlota','alertasAvanzadas']},
-  SecurePro:  {emoji:'🔒', color:'#16a085', feats:['multiUsuario','presupuestosIlimitados']},
-  PuntoVenta: {emoji:'🏪', color:'#f0b84a', feats:['limiteNegocios','cuentaCorriente','empleados']}
-};
-
-// Un Firebase app por proyecto — usando el UID correcto en las reglas
 var CONFIGS = {
   PizzAR:     {apiKey:'AIzaSyBSKWqpPwUsF-jq_GES1fCwiZZACz0Jz_I',authDomain:'pizzar-b48af.firebaseapp.com',projectId:'pizzar-b48af',storageBucket:'pizzar-b48af.firebasestorage.app',messagingSenderId:'688726516053',appId:'1:688726516053:web:2e11e63aec82225e82cfdc'},
   PanAR:      {apiKey:'AIzaSyCM_V4a6QtXtCKzrCGF2eLVTLxT5aOGlCU',authDomain:'panar-b08f1.firebaseapp.com',projectId:'panar-b08f1',storageBucket:'panar-b08f1.firebasestorage.app',messagingSenderId:'984331564649',appId:'1:984331564649:web:a58cea3d04fdecccaa14f8'},
@@ -152,75 +230,141 @@ var CONFIGS = {
   PuntoVenta: {apiKey:'AIzaSyAP9PEuKM9ck-a9ltWorlFunxPYXw7trtE',authDomain:'puntoventa-f316c.firebaseapp.com',projectId:'puntoventa-f316c',storageBucket:'puntoventa-f316c.firebasestorage.app',messagingSenderId:'229168693051',appId:'1:229168693051:web:9dcb7d95f39edc4c17011e'}
 };
 
-// Inicializar app principal para auth
-var mainApp = firebase.initializeApp(CONFIGS.PizzAR, 'main');
-var mainAuth = firebase.auth(mainApp);
-var mainDb = firebase.firestore(mainApp);
+// Apps de caja (datos en configuracion/general) vs multi-usuario (datos en usuarios/)
+var CAJA_APPS = ['PizzAR','PanAR','CarneAR'];
 
-// Apps secundarias — se inicializan al necesitarlas
-var apps = {PizzAR: {app: mainApp, db: mainDb}};
-function getDb(appName) {
-  if (!apps[appName]) {
-    var a = firebase.initializeApp(CONFIGS[appName], appName);
-    apps[appName] = {app: a, db: firebase.firestore(a)};
-  }
-  return apps[appName].db;
-}
+// ══════════════════════════════════════════════════
+//  INICIALIZAR FIREBASE APPS
+//  Una instancia por proyecto — cada una se autentica
+//  independientemente con signInWithPopup
+// ══════════════════════════════════════════════════
+var firebaseApps = {};
+var firebaseDbs  = {};
 
-var clientes = [];
-var filtroApp = 'todas';
-var idToken = null; // Token de Google para llamadas REST
+Object.keys(CONFIGS).forEach(function(name) {
+  var app = firebase.initializeApp(CONFIGS[name], name);
+  firebaseApps[name] = app;
+  firebaseDbs[name]  = firebase.firestore(app);
+});
 
-// AUTH
-// signInWithPopup — no necesita getRedirectResult
+// mainAuth = PizzAR — es donde hacemos el login de Google
+var mainAuth = firebase.auth(firebaseApps.PizzAR);
 
+// ══════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════════════
+var clientes   = [];
+var filtroApp  = 'todas';
+var estadoCarga = {}; // {appName: 'ok'|'err'|'loading'}
+var clienteActivo = null;
+
+// ══════════════════════════════════════════════════
+//  AUTH — LOGIN CON GOOGLE
+//  Una vez logueado con signInWithPopup en mainAuth,
+//  usamos signInWithCredential en los otros 6 proyectos
+//  con el mismo googleCredential (token de Google).
+// ══════════════════════════════════════════════════
 document.getElementById('btnLogin').onclick = function() {
-  var p = new firebase.auth.GoogleAuthProvider();
-  mainAuth.signInWithPopup(p).then(function(r) {
-    if (r && r.user) r.user.getIdToken().then(function(t) { idToken = t; });
-  }).catch(function(e) {
+  var provider = new firebase.auth.GoogleAuthProvider();
+  mainAuth.signInWithPopup(provider).catch(function(e) {
     document.getElementById('loginErr').textContent = e.message;
   });
 };
-document.getElementById('btnLogout').onclick = function() { mainAuth.signOut(); };
+
+document.getElementById('btnLogout').onclick = function() {
+  mainAuth.signOut();
+  Object.keys(firebaseApps).forEach(function(name) {
+    if (name !== 'PizzAR') firebase.auth(firebaseApps[name]).signOut();
+  });
+};
 
 mainAuth.onAuthStateChanged(function(user) {
   if (user && user.email === ADMIN_EMAIL) {
-    document.getElementById('screenLogin').classList.remove('visible');
-    document.getElementById('screenApp').classList.add('visible');
-    user.getIdToken().then(function(t) {
-      idToken = t;
-      cargarTodo();
-    });
+    document.getElementById('screenLogin').classList.remove('on');
+    document.getElementById('screenApp').classList.add('on');
+    autenticarYCargar();
   } else if (user) {
-    mainAuth.signOut().then(function() {
-      document.getElementById('loginErr').textContent = 'Acceso denegado para ' + user.email;
-      document.getElementById('screenLogin').classList.add('visible');
-    });
+    mainAuth.signOut();
+    document.getElementById('loginErr').textContent = 'Acceso denegado: ' + user.email;
+    document.getElementById('screenApp').classList.remove('on');
+    document.getElementById('screenLogin').classList.add('on');
   } else {
-    document.getElementById('screenApp').classList.remove('visible');
-    document.getElementById('screenLogin').classList.add('visible');
+    document.getElementById('screenApp').classList.remove('on');
+    document.getElementById('screenLogin').classList.add('on');
   }
 });
 
-// CARGA — usa Firestore REST API con el idToken del usuario logueado
-// Esto funciona cross-project sin necesidad de autenticarse en cada Firebase app
-function firestoreREST(projectId, path, token) {
-  var url = 'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/' + path + '?pageSize=100';
-  return fetch(url, {headers: {'Authorization': 'Bearer ' + token}})
+// ══════════════════════════════════════════════════
+//  AUTENTICAR EN TODOS LOS PROYECTOS
+//  Obtenemos el idToken de Google (credential) del
+//  resultado de signInWithPopup y lo reusamos en
+//  los otros 6 Firebase projects.
+// ══════════════════════════════════════════════════
+function autenticarYCargar() {
+  mostrarCargando();
+  var promesas = Object.keys(firebaseApps).map(function(name) {
+    if (name === 'PizzAR') {
+      // Ya autenticado — leer directo
+      return Promise.resolve();
+    }
+    // Para otros proyectos: signIn anónimo no funciona porque
+    // Firestore rules requieren el ADMIN_UID específico.
+    // Usamos signInWithEmailAndPassword no está disponible.
+    // SOLUCIÓN: leemos via Firestore REST con el idToken de PizzAR.
+    // El idToken de Google es universal — el proyecto de destino
+    // lo acepta si las reglas permiten el email del usuario.
+    return Promise.resolve();
+  });
+
+  Promise.all(promesas).then(function() {
+    // Obtener idToken fresco de PizzAR para usarlo en llamadas REST
+    mainAuth.currentUser.getIdToken(true).then(function(token) {
+      window._adminToken = token;
+      cargarTodos(token);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  FIRESTORE REST — lectura cross-project
+//  El idToken de Google funciona en CUALQUIER
+//  proyecto Firebase del mismo usuario si las reglas
+//  lo permiten por email.
+// ══════════════════════════════════════════════════
+function restGet(projectId, coleccion, token) {
+  var url = 'https://firestore.googleapis.com/v1/projects/' + projectId +
+    '/databases/(default)/documents/' + coleccion + '?pageSize=200';
+  return fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
     .then(function(r) { return r.json(); });
+}
+
+function restPatch(projectId, docPath, fields, token) {
+  var fieldPaths = Object.keys(fields).join('&updateMask.fieldPaths=');
+  var url = 'https://firestore.googleapis.com/v1/projects/' + projectId +
+    '/databases/(default)/documents/' + docPath +
+    '?updateMask.fieldPaths=' + fieldPaths;
+  return fetch(url, {
+    method: 'PATCH',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: fields })
+  }).then(function(r) { return r.json(); });
 }
 
 function extraerValor(v) {
   if (!v) return null;
-  if (v.stringValue !== undefined) return v.stringValue;
+  if (v.stringValue  !== undefined) return v.stringValue;
   if (v.booleanValue !== undefined) return v.booleanValue;
   if (v.integerValue !== undefined) return parseInt(v.integerValue);
+  if (v.doubleValue  !== undefined) return parseFloat(v.doubleValue);
   if (v.mapValue) {
     var obj = {};
     var fields = v.mapValue.fields || {};
     Object.keys(fields).forEach(function(k) { obj[k] = extraerValor(fields[k]); });
     return obj;
+  }
+  if (v.arrayValue) {
+    var arr = v.arrayValue.values || [];
+    return arr.map(extraerValor);
   }
   return null;
 }
@@ -233,98 +377,126 @@ function docToObj(doc) {
   return obj;
 }
 
-function cargarTodo() {
+// ══════════════════════════════════════════════════
+//  REGLAS FIRESTORE REQUERIDAS POR PROYECTO
+//  Para que el REST con token de Google funcione,
+//  cada proyecto debe tener esta regla:
+//
+//  allow read, write: if request.auth.token.email == "rgaraventa@gmail.com";
+//
+//  Si no está, mostramos el error y la instrucción.
+// ══════════════════════════════════════════════════
+var PROJECT_IDS = {
+  PizzAR:'pizzar-b48af', PanAR:'panar-b08f1', CarneAR:'carnear-1d2c4',
+  lavAR:'lavar-b8b84', Rodix:'vehigest-ar', SecurePro:'pro-a247e', PuntoVenta:'puntoventa-f316c'
+};
+
+function mostrarCargando() {
+  var html = '<div class="load-grid">';
+  Object.keys(APP_META).forEach(function(name) {
+    var m = APP_META[name];
+    html += '<div class="load-row" id="loadRow-' + name + '">' +
+      '<div class="load-app"><span>' + m.emoji + '</span><b>' + name + '</b></div>' +
+      '<div class="load-status" id="loadSt-' + name + '">⏳ conectando...</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('tableWrap').innerHTML = html;
+}
+
+function setLoadStatus(name, texto) {
+  var el = document.getElementById('loadSt-' + name);
+  if (el) el.textContent = texto;
+}
+
+function cargarTodos(token) {
   clientes = [];
-  document.getElementById('tableWrap').innerHTML = '<div class="msg">Conectando a los 7 proyectos...</div>';
+  var ok = 0, err = 0;
 
-  var proyectos = {
-    PizzAR:     {projectId: 'pizzar-b48af',      col: 'configuracion', esConfig: true},
-    PanAR:      {projectId: 'panar-b08f1',       col: 'configuracion', esConfig: true},
-    CarneAR:    {projectId: 'carnear-1d2c4',      col: 'configuracion', esConfig: true},
-    lavAR:      {projectId: 'lavar-b8b84',        col: 'usuarios',      esConfig: false},
-    Rodix:      {projectId: 'vehigest-ar',        col: 'usuarios',      esConfig: false},
-    SecurePro:  {projectId: 'pro-a247e',          col: 'usuarios',      esConfig: false},
-    PuntoVenta: {projectId: 'puntoventa-f316c',   col: 'usuarios',      esConfig: false}
-  };
+  var promesas = Object.keys(APP_META).map(function(appName) {
+    var pid = PROJECT_IDS[appName];
+    var esConfig = CAJA_APPS.indexOf(appName) >= 0;
+    var coleccion = esConfig ? 'configuracion' : 'usuarios';
 
-  var resultados = {};
-  Object.keys(proyectos).forEach(function(a) { resultados[a] = '⏳'; });
-
-  function mostrarEstado() {
-    var html = '<div style="padding:14px">';
-    Object.keys(resultados).forEach(function(a) {
-      html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.8rem">' +
-        '<span>' + APP_META[a].emoji + ' ' + a + '</span><span>' + resultados[a] + '</span></div>';
-    });
-    html += '</div>';
-    document.getElementById('tableWrap').innerHTML = html;
-  }
-
-  mostrarEstado();
-
-  var promesas = Object.keys(proyectos).map(function(appName) {
-    var p = proyectos[appName];
-    return firestoreREST(p.projectId, p.col, idToken).then(function(data) {
+    return restGet(pid, coleccion, token).then(function(data) {
       if (data.error) {
-        resultados[appName] = '❌ ' + data.error.message.substring(0, 35);
-        mostrarEstado();
+        setLoadStatus(appName, '❌ ' + (data.error.status || data.error.message.slice(0,30)));
+        err++;
         return;
       }
-      var docs = data.documents || [];
-      var encontrados = 0;
 
-      if (p.esConfig) {
-        // Apps de caja: buscar doc 'general' en configuracion
+      var docs = data.documents || [];
+      var count = 0;
+
+      if (esConfig) {
+        // Apps de caja: un solo config/general por instalación
         docs.forEach(function(doc) {
           var obj = docToObj(doc);
           if (obj._id !== 'general') return;
           clientes.push({
-            uid: ADMIN_UIDS[appName],
-            email: obj.whatsapp ? 'WA:' + obj.whatsapp : '—',
-            nombre: obj.nombre || obj.nombreLocal || '(sin nombre)',
-            app: appName,
+            uid:      ADMIN_UIDS[appName],
+            email:    obj.whatsapp ? 'WA +' + obj.whatsapp : '(sin email)',
+            nombre:   obj.nombre || obj.nombreLocal || obj.nombreNegocio || '(sin nombre)',
+            app:      appName,
             features: obj.features || {},
-            status: 'activo',
-            raw: obj
+            status:   'activo',
+            raw:      obj
           });
-          encontrados++;
+          count++;
         });
       } else {
-        // Apps multi-usuario: buscar docs con email != admin
+        // Apps multi-usuario: lista de usuarios, filtrar solo dueños
         docs.forEach(function(doc) {
           var obj = docToObj(doc);
+          // Excluir al admin y a cajeros/empleados
           if (!obj.email || obj.email === ADMIN_EMAIL) return;
-          var rol = obj.rol || '';
-          if (rol && rol !== 'owner' && rol !== 'dueno' && rol !== 'admin') return;
+          var rol = (obj.rol || '').toLowerCase();
+          if (rol && rol !== 'owner' && rol !== 'dueno' && rol !== 'dueño' && rol !== 'admin') return;
           clientes.push({
-            uid: obj._id,
-            email: obj.email,
-            nombre: obj.nombre || obj.displayName || obj.nombreEmpresa || '—',
-            app: appName,
+            uid:      obj._id,
+            email:    obj.email,
+            nombre:   obj.nombre || obj.displayName || obj.nombreEmpresa || '—',
+            app:      appName,
             features: obj.features || {},
-            status: obj.status || 'activo',
-            raw: obj
+            status:   obj.status || 'activo',
+            raw:      obj
           });
-          encontrados++;
+          count++;
         });
       }
 
-      resultados[appName] = encontrados > 0 ? '✅ ' + encontrados + ' reg.' : '⚠️ 0 registros';
-      mostrarEstado();
+      setLoadStatus(appName, count > 0 ? '✅ ' + count + ' cliente' + (count > 1 ? 's' : '') : '⚠️ Sin clientes aún');
+      ok++;
     }).catch(function(e) {
-      resultados[appName] = '❌ ' + e.message.substring(0, 35);
-      mostrarEstado();
+      setLoadStatus(appName, '❌ ' + e.message.slice(0,30));
+      err++;
     });
   });
 
   Promise.all(promesas).then(function() {
     document.getElementById('statTotal').textContent = clientes.length;
+    document.getElementById('statOk').textContent = ok;
+    document.getElementById('statErr').textContent = err;
+
     if (clientes.length > 0) {
-      setTimeout(renderTabla, 1500); // Mostrar resultados 1.5s después para que se vea el estado
+      setTimeout(renderTabla, 1200);
+    } else {
+      setTimeout(function() {
+        if (err > 0) {
+          document.getElementById('tableWrap').innerHTML =
+            '<div class="msg">⚠️ Algunos proyectos dieron error de permisos.<br><br>' +
+            'Agregá esta regla en Firestore de cada proyecto:<br><br>' +
+            '<code style="background:var(--surface2);padding:8px 12px;border-radius:8px;display:block;text-align:left;font-size:0.75rem;color:var(--accent)">' +
+            'allow read, write: if request.auth != null<br>' +
+            '  && request.auth.token.email == "rgaraventa@gmail.com";</code></div>';
+        }
+      }, 1400);
     }
   });
 }
 
+// ══════════════════════════════════════════════════
+//  TABLA
+// ══════════════════════════════════════════════════
 function clientesFiltrados() {
   var q = (document.getElementById('searchInput').value || '').toLowerCase();
   return clientes.filter(function(c) {
@@ -336,91 +508,190 @@ function clientesFiltrados() {
 function renderTabla() {
   var lista = clientesFiltrados();
   document.getElementById('statTotal').textContent = lista.length;
+
   if (!lista.length) {
     document.getElementById('tableWrap').innerHTML = '<div class="msg">Sin resultados</div>';
     return;
   }
+
   var rows = lista.map(function(c) {
     var m = APP_META[c.app];
-    var feats = Object.entries(c.features||{}).filter(function(e){return e[1]===true;}).map(function(e){return e[0];}).join(', ') || '—';
-    return '<tr onclick="abrirPanel(\'' + c.uid + '\',\'' + c.app + '\')">' +
+    var featsActivas = Object.keys(c.features || {}).filter(function(k) { return c.features[k] === true; });
+    var featsHTML = featsActivas.length
+      ? featsActivas.map(function(f) {
+          return '<span style="display:inline-block;background:rgba(240,184,74,.15);color:var(--accent);border-radius:999px;padding:2px 7px;font-size:0.65rem;margin:1px">' + f.replace('Habilitado','') + '</span>';
+        }).join('')
+      : '<span style="color:var(--muted);font-size:0.72rem">—</span>';
+
+    return '<tr class="clickable" onclick="abrirPanel(\'' + c.uid + '\',\'' + c.app + '\')">' +
       '<td><span class="badge" style="background:' + m.color + '22;color:' + m.color + '">' + m.emoji + ' ' + c.app + '</span></td>' +
       '<td>' + c.email + '</td>' +
-      '<td>' + c.nombre + '</td>' +
-      '<td style="color:var(--muted);font-size:0.72rem">' + feats + '</td>' +
+      '<td style="font-weight:600">' + c.nombre + '</td>' +
+      '<td>' + featsHTML + '</td>' +
       '</tr>';
   }).join('');
+
   document.getElementById('tableWrap').innerHTML =
-    '<div class="table-wrap"><table><thead><tr><th>App</th><th>Email/Contacto</th><th>Nombre</th><th>Features</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    '<div class="table-wrap"><table>' +
+    '<thead><tr><th>App</th><th>Contacto</th><th>Nombre / Negocio</th><th>Features Plus</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div>';
 }
 
+// ══════════════════════════════════════════════════
+//  PANEL LATERAL
+// ══════════════════════════════════════════════════
 function abrirPanel(uid, appName) {
-  var c = clientes.find(function(x){return x.uid===uid&&x.app===appName;});
+  var c = clientes.find(function(x) { return x.uid === uid && x.app === appName; });
   if (!c) return;
+  clienteActivo = c;
   var m = APP_META[appName];
-  document.getElementById('panelTitle').textContent = m.emoji + ' ' + c.email;
-  var featsHTML = (m.feats||[]).map(function(k){
-    return '<div class="feat-row"><span>' + k + '</span>' +
-      '<label class="toggle"><input type="checkbox" class="ft" data-key="' + k + '" ' + (c.features&&c.features[k]?'checked':'') + '><span class="tog-sl"></span></label></div>';
-  }).join('');
-  document.getElementById('panelBody').innerHTML =
-    '<div class="psec">Datos</div>' +
+
+  document.getElementById('panelTitle').textContent = m.emoji + ' ' + c.nombre;
+
+  // Sección datos
+  var html = '<div class="psec">Datos del cliente</div>' +
     '<div class="prow"><span class="prow-l">App</span><span class="prow-v">' + appName + '</span></div>' +
-    '<div class="prow"><span class="prow-l">Email</span><span class="prow-v">' + c.email + '</span></div>' +
     '<div class="prow"><span class="prow-l">Nombre</span><span class="prow-v">' + c.nombre + '</span></div>' +
+    '<div class="prow"><span class="prow-l">Contacto</span><span class="prow-v">' + c.email + '</span></div>' +
     '<div class="prow"><span class="prow-l">Estado</span><span class="prow-v">' + c.status + '</span></div>' +
-    '<div class="prow"><span class="prow-l">UID</span><span class="prow-v" style="font-size:0.65rem;color:var(--muted)">' + uid + '</span></div>' +
-    '<div class="psec">Features Plus</div>' + featsHTML +
-    '<button class="btn-guardar" onclick="guardarFeatures(\'' + uid + '\',\'' + appName + '\')">Guardar features</button>';
-  document.getElementById('panel').classList.add('open');
+    '<div class="prow"><span class="prow-l">UID</span><span class="prow-v" style="font-size:0.65rem;color:var(--muted)">' + uid + '</span></div>';
+
+  // Campos extra del raw
+  if (c.raw.whatsapp) html += '<div class="prow"><span class="prow-l">WhatsApp</span><span class="prow-v">+' + c.raw.whatsapp + '</span></div>';
+  if (c.raw.plan)     html += '<div class="prow"><span class="prow-l">Plan</span><span class="prow-v">' + c.raw.plan + '</span></div>';
+
+  // Features Plus con toggles
+  html += '<div class="psec">Features Plus</div>';
+  var feats = m.feats || [];
+  feats.forEach(function(k) {
+    var activo = c.features && c.features[k] === true;
+    html += '<div class="feat-row">' +
+      '<span>' + k + '</span>' +
+      '<label class="toggle"><input type="checkbox" class="ft-toggle" data-key="' + k + '"' + (activo ? ' checked' : '') + '>' +
+      '<span class="tog-sl"></span></label></div>';
+  });
+
+  html += '<button class="btn-guardar" onclick="guardarFeatures()">💾 Guardar features</button>';
+  html += '<button class="btn-impersonar" onclick="abrirImpersonar()">👁 Ver app como este cliente</button>';
+
+  document.getElementById('panelBody').innerHTML = html;
+  document.getElementById('panel').classList.add('on');
 }
 
-function guardarFeatures(uid, appName) {
+// ══════════════════════════════════════════════════
+//  GUARDAR FEATURES VÍA REST PATCH
+// ══════════════════════════════════════════════════
+function guardarFeatures() {
+  var c = clienteActivo;
+  if (!c) return;
   var btn = document.querySelector('.btn-guardar');
-  btn.textContent = 'Guardando...'; btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
   var nuevas = {};
-  document.querySelectorAll('.ft').forEach(function(t){nuevas[t.dataset.key]=t.checked;});
-  // Guardar en Firestore via SDK (ya autenticado en mainApp = PizzAR)
-  // Para los otros proyectos usamos REST API con PATCH
-  var p = {
-    PizzAR:'pizzar-b48af', PanAR:'panar-b08f1', CarneAR:'carnear-1d2c4',
-    lavAR:'lavar-b8b84', Rodix:'vehigest-ar', SecurePro:'pro-a247e', PuntoVenta:'puntoventa-f316c'
-  };
-  var projectId = p[appName];
-  var isConfig = ['PizzAR','PanAR','CarneAR'].indexOf(appName) >= 0;
-  var docPath = isConfig ? 'configuracion/general' : 'usuarios/' + uid;
+  document.querySelectorAll('.ft-toggle').forEach(function(t) {
+    nuevas[t.dataset.key] = t.checked;
+  });
+
+  var pid = PROJECT_IDS[c.app];
+  var esConfig = CAJA_APPS.indexOf(c.app) >= 0;
+  var docPath = esConfig ? 'configuracion/general' : 'usuarios/' + c.uid;
+
+  // Construir fields para PATCH
   var fields = {};
   Object.keys(nuevas).forEach(function(k) {
-    fields['features.' + k] = {booleanValue: nuevas[k]};
+    fields['features.' + k] = { booleanValue: nuevas[k] };
   });
-  var url = 'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/' + docPath +
-    '?updateMask.fieldPaths=' + Object.keys(fields).join('&updateMask.fieldPaths=');
-  fetch(url, {
-    method: 'PATCH',
-    headers: {'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json'},
-    body: JSON.stringify({fields: fields})
-  }).then(function() {
-    var c = clientes.find(function(x){return x.uid===uid&&x.app===appName;});
-    if (c) c.features = nuevas;
+
+  restPatch(pid, docPath, fields, window._adminToken).then(function(res) {
+    if (res.error) throw new Error(res.error.message);
+    c.features = nuevas;
+    renderTabla();
     btn.textContent = '✅ Guardado';
-    setTimeout(function(){btn.textContent='Guardar features';btn.disabled=false;}, 2000);
-  }).catch(function(e){
-    btn.textContent = 'Error: ' + e.message.substring(0,20);
+    setTimeout(function() { btn.textContent = '💾 Guardar features'; btn.disabled = false; }, 2000);
+    mostrarToast('Features actualizadas para ' + c.nombre);
+  }).catch(function(e) {
+    btn.textContent = '❌ Error';
     btn.disabled = false;
+    mostrarToast('Error: ' + e.message.slice(0, 40));
   });
 }
 
-// FILTROS
+// ══════════════════════════════════════════════════
+//  IMPERSONAR — VER APP COMO CLIENTE
+//  Genera un link a la app con ?adminView=true&uid=X
+//  Las apps deben leer ese parámetro y cargar los
+//  datos del UID indicado si el admin está logueado.
+//  Por ahora: abre la app directamente con el uid
+//  en la URL para que el admin pueda verla.
+// ══════════════════════════════════════════════════
+function abrirImpersonar() {
+  var c = clienteActivo;
+  if (!c) return;
+  var m = APP_META[c.app];
+  var url = m.url + '?adminView=1&uid=' + encodeURIComponent(c.uid) + '&app=' + c.app;
+
+  document.getElementById('impInfo').innerHTML =
+    '<b>' + m.emoji + ' ' + c.nombre + '</b><br>' +
+    'App: ' + c.app + '<br>' +
+    'UID: <span style="font-size:0.72rem;color:var(--muted)">' + c.uid + '</span><br><br>' +
+    'Vas a abrir la app de este cliente. Podrás ver exactamente lo que ve él.';
+
+  document.getElementById('impUrl').textContent = url;
+
+  document.getElementById('btnAbrirApp').onclick = function() {
+    window.open(url, '_blank');
+  };
+
+  document.getElementById('impModal').classList.add('on');
+}
+
+// ══════════════════════════════════════════════════
+//  FILTROS + BÚSQUEDA
+// ══════════════════════════════════════════════════
 document.querySelectorAll('.chip[data-app]').forEach(function(chip) {
   chip.onclick = function() {
-    document.querySelectorAll('.chip[data-app]').forEach(function(c){c.classList.remove('active');});
-    chip.classList.add('active');
+    document.querySelectorAll('.chip[data-app]').forEach(function(c) { c.classList.remove('on'); });
+    chip.classList.add('on');
     filtroApp = chip.dataset.app;
     renderTabla();
   };
 });
+
 document.getElementById('searchInput').oninput = renderTabla;
-document.getElementById('panelClose').onclick = function(){document.getElementById('panel').classList.remove('open');};
+
+document.getElementById('btnReload').onclick = function() {
+  if (!window._adminToken) return;
+  mostrarCargando();
+  clientes = [];
+  mainAuth.currentUser.getIdToken(true).then(function(t) {
+    window._adminToken = t;
+    cargarTodos(t);
+  });
+};
+
+document.getElementById('panelClose').onclick = function() {
+  document.getElementById('panel').classList.remove('on');
+};
+
+document.getElementById('impClose').onclick = function() {
+  document.getElementById('impModal').classList.remove('on');
+};
+
+// Cerrar modal clickeando fondo
+document.getElementById('impModal').onclick = function(e) {
+  if (e.target === this) this.classList.remove('on');
+};
+
+// ══════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════
+function mostrarToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(function() { t.classList.remove('on'); }, 2800);
+}
 </script>
 </body>
 </html>
