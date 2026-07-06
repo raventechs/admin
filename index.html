@@ -172,20 +172,20 @@ var filtroApp = 'todas';
 var idToken = null; // Token de Google para llamadas REST
 
 // AUTH
-mainAuth.getRedirectResult().then(function(r) {
-  if (r && r.user) {
-    r.user.getIdToken().then(function(t) { idToken = t; });
-  }
-}).catch(function(){});
+// signInWithPopup — no necesita getRedirectResult
 
 document.getElementById('btnLogin').onclick = function() {
   var p = new firebase.auth.GoogleAuthProvider();
-  mainAuth.signInWithRedirect(p);
+  mainAuth.signInWithPopup(p).then(function(r) {
+    if (r && r.user) r.user.getIdToken().then(function(t) { idToken = t; });
+  }).catch(function(e) {
+    document.getElementById('loginErr').textContent = e.message;
+  });
 };
 document.getElementById('btnLogout').onclick = function() { mainAuth.signOut(); };
 
 mainAuth.onAuthStateChanged(function(user) {
-  if (user && user.uid === ADMIN_UID_PIZZAR) {
+  if (user && user.email === ADMIN_EMAIL) {
     document.getElementById('screenLogin').classList.remove('visible');
     document.getElementById('screenApp').classList.add('visible');
     user.getIdToken().then(function(t) {
@@ -193,9 +193,10 @@ mainAuth.onAuthStateChanged(function(user) {
       cargarTodo();
     });
   } else if (user) {
-    mainAuth.signOut();
-    document.getElementById('loginErr').textContent = 'Acceso denegado.';
-    document.getElementById('screenLogin').classList.add('visible');
+    mainAuth.signOut().then(function() {
+      document.getElementById('loginErr').textContent = 'Acceso denegado para ' + user.email;
+      document.getElementById('screenLogin').classList.add('visible');
+    });
   } else {
     document.getElementById('screenApp').classList.remove('visible');
     document.getElementById('screenLogin').classList.add('visible');
