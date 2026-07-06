@@ -104,6 +104,7 @@ tr:hover td{background:var(--surface2);cursor:pointer}
   <div style="font-size:40px">🦅</div>
   <div style="color:var(--accent);font-weight:700">RavenTechs</div>
   <div class="spinner" style="margin-top:8px"></div>
+  <div id="debugLog" style="margin-top:16px;font-size:0.7rem;color:#666;max-width:300px;text-align:left;"></div>
 </div>
 
 <div id="screenLogin">
@@ -166,6 +167,13 @@ tr:hover td{background:var(--surface2);cursor:pointer}
 </div>
 
 <script>
+// ── DEBUG LOG ──
+function log(msg) {
+  var el = document.getElementById('debugLog');
+  if (el) el.innerHTML += '<div>' + msg + '</div>';
+  console.log('[Admin]', msg);
+}
+
 // ── SUPERADMIN UIDs por proyecto ──
 var SUPERADMIN_EMAIL = 'rgaraventa@gmail.com';
 var SUPERADMIN_UIDS = {
@@ -236,12 +244,18 @@ function showApp(v) {
 // ── AUTH ──
 document.getElementById('btnLogin').onclick = function() {
   var provider = new firebase.auth.GoogleAuthProvider();
-  mainAuth.signInWithPopup(provider).then(function(result) {
-    googleCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
-  }).catch(function(e) {
-    document.getElementById('loginError').textContent = e.message;
-  });
+  mainAuth.signInWithRedirect(provider);
 };
+
+// Capturar resultado del redirect al volver
+mainAuth.getRedirectResult().then(function(result) {
+  if (result && result.user) {
+    googleCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+    log('Credential capturado via redirect: ' + (googleCredential ? 'SI' : 'NO'));
+  }
+}).catch(function(e) {
+  log('Error redirect: ' + e.message);
+});
 
 document.getElementById('btnLogout').onclick = function() {
   mainAuth.signOut();
@@ -249,6 +263,7 @@ document.getElementById('btnLogout').onclick = function() {
 
 mainAuth.onAuthStateChanged(function(user) {
   showLoading(false);
+  log('onAuthStateChanged: user=' + (user ? user.email : 'null') + ' credential=' + (googleCredential ? 'SI' : 'NO'));
   if (user) {
     if (user.uid !== SUPERADMIN_UIDS.PizzAR) {
       document.getElementById('loginError').textContent = 'Acceso denegado.';
@@ -301,7 +316,8 @@ function autenticarYCargar() {
       .then(autenticarSiguiente)
       .catch(function(e) {
         console.warn('Auth ' + appName + ':', e.message);
-        autenticarSiguiente();
+        log('Autenticando en ' + appName + '...');
+    autenticarSiguiente();
       });
   }
   autenticarSiguiente();
