@@ -309,12 +309,42 @@ function autenticarYCargar() {
 
 function cargarTodosLosClientes() {
   todosClientes = [];
-  document.getElementById('tableContainer').innerHTML = '<div class="loading-msg">Cargando...</div>';
-  var promesas = Object.keys(APP_CONFIGS).map(function(appName) {
-    return cargarApp(appName);
+  var appNames = Object.keys(APP_CONFIGS);
+  var resultados = {};
+  appNames.forEach(function(a) { resultados[a] = 'cargando...'; });
+
+  function actualizarDebug() {
+    var html = '<div style="padding:16px;font-size:0.8rem;">' +
+      '<div style="font-weight:700;margin-bottom:10px;color:var(--accent)">Estado de conexion por app:</div>';
+    Object.keys(resultados).forEach(function(a) {
+      var color = resultados[a] === 'cargando...' ? '#888' :
+                  resultados[a].startsWith('OK') ? '#27ae60' : '#e74c3c';
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">' +
+        '<span>' + APP_CONFIGS[a].emoji + ' ' + a + '</span>' +
+        '<span style="color:' + color + '">' + resultados[a] + '</span></div>';
+    });
+    html += '</div>';
+    document.getElementById('tableContainer').innerHTML = html;
+  }
+
+  actualizarDebug();
+
+  var promesas = appNames.map(function(appName) {
+    return cargarApp(appName).then(function() {
+      var encontrados = todosClientes.filter(function(c) { return c.app === appName; }).length;
+      resultados[appName] = 'OK (' + encontrados + ' registros)';
+      actualizarDebug();
+    }).catch(function(e) {
+      resultados[appName] = 'ERROR: ' + e.message.substring(0, 40);
+      actualizarDebug();
+    });
   });
+
   Promise.allSettled(promesas).then(function() {
-    renderTabla();
+    if (todosClientes.length > 0) {
+      renderTabla();
+    }
+    // Si hay errores, el debug queda visible mostrando qué falló
   });
 }
 
