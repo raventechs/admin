@@ -297,39 +297,64 @@ function cargarTodosLosClientes() {
 function cargarApp(appName) {
   var inst = getFirebaseApp(appName);
   var db = inst.db;
-  var uid = SUPERADMIN_UIDS[appName];
+  var APPS_CAJA = ['PizzAR', 'PanAR', 'CarneAR'];
 
-  var colecciones = {
-    PizzAR:     [{ col:'configuracion', tipo:'config' }],
-    PanAR:      [{ col:'configuracion', tipo:'config' }],
-    CarneAR:    [{ col:'negocios', tipo:'col', emailField:'email' }],
-    lavAR:      [{ col:'usuarios', tipo:'col', emailField:'email' }],
-    Rodix:      [{ col:'usuarios', tipo:'col', emailField:'email' }],
-    SecurePro:  [{ col:'usuarios', tipo:'col', emailField:'email' }],
-    PuntoVenta: [{ col:'usuarios', tipo:'col', emailField:'email' }]
-  };
+  // Apps de caja: un solo doc en configuracion/general por instalacion
+  if (APPS_CAJA.indexOf(appName) >= 0) {
+    return db.collection('configuracion').doc('general').get().then(function(docSnap) {
+      if (!docSnap.exists) return;
+      var data = docSnap.data();
+      var nombre = data.nombre || data.nombreLocal || '(sin configurar)';
+      todosClientes.push({
+        uid: SUPERADMIN_UIDS[appName],
+        email: data.whatsapp ? 'WA: +' + data.whatsapp : '(sin email)',
+        nombre: nombre,
+        app: appName,
+        features: data.features || {},
+        status: 'activo',
+        raw: data,
+        esLocal: true
+      });
+    }).catch(function(e) { console.warn('Error config ' + appName + ':', e.message); });
+  }
 
-  var info = colecciones[appName][0];
+  // lavAR — coleccion usuarios (duenos de lavaderos)
+  if (appName === 'lavAR') {
+    return db.collection('usuarios').get().then(function(snap) {
+      snap.forEach(function(d) {
+        var data = d.data();
+        if (!data.email || data.email === SUPERADMIN_EMAIL) return;
+        todosClientes.push({
+          uid: d.id,
+          email: data.email,
+          nombre: data.nombre || data.nombreNegocio || '—',
+          app: appName,
+          features: data.features || {},
+          status: data.status || 'activo',
+          raw: data
+        });
+      });
+    }).catch(function(e) { console.warn('Error ' + appName + ':', e.message); });
+  }
 
-  return db.collection(info.col).get().then(function(snap) {
+  // Rodix, SecurePro, PuntoVenta — coleccion usuarios, rol owner/dueno
+  return db.collection('usuarios').get().then(function(snap) {
     snap.forEach(function(d) {
       var data = d.data();
-      var email = data.email || data.ownerEmail || '';
-      // Excluir el superadmin
-      if (!email || email === SUPERADMIN_EMAIL) return;
+      if (!data.email || data.email === SUPERADMIN_EMAIL) return;
+      var rol = data.rol || '';
+      if (rol && rol !== 'owner' && rol !== 'dueno' && rol !== 'admin' && rol !== '') return;
       todosClientes.push({
         uid: d.id,
-        email: email,
-        nombre: data.nombre || data.nombreLocal || data.displayName || '—',
+        email: data.email,
+        nombre: data.nombre || data.nombreEmpresa || data.displayName || '—',
         app: appName,
         features: data.features || {},
         status: data.status || 'activo',
         raw: data
       });
     });
-  }).catch(function(e) {
-    console.warn('Error cargando ' + appName + ':', e.message);
-  });
+  }).catch(function(e) { console.warn('Error ' + appName + ':', e.message); });
 }
 
 // ── TABLA ──
